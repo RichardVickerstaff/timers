@@ -2,6 +2,8 @@ require 'set'
 require 'forwardable'
 require 'timers/version'
 require 'hitimes'
+require 'tod'
+require 'parse-cron'
 
 # Workaround for thread safety issues in SortedSet initialization
 # See: https://github.com/celluloid/timers/issues/20
@@ -17,6 +19,32 @@ class Timers
     @paused_timers = SortedSet.new
     @interval = Hitimes::Interval.new
     @interval.start
+  end
+
+
+  # Call the given block using cron notation
+  #e.g cron('* * * * *') { puts "Hi" } will puts hi every min
+  def cron(time, &block)
+    cron_parser = CronParser.new(time)
+    interval = cron_parser.next - Time.now
+    after(interval) { block.call; cron(time, &block) }
+  end
+
+  # Call the given block at a given time in a human readable format
+  def at(time, recurring = false, &block)
+    sleep_at = TimeOfDay.parse(time).second_of_day
+    time_now = Time.now.to_time_of_day.second_of_day
+    interval = sleep_at - time_now
+    if recurring
+      after(interval) { block.call; every(86400, &block) }
+    else
+      after(interval, &block)
+    end
+  end
+
+  # Call the given block at a given time in a human readable format every day
+  def recurring_at(time, &block)
+    at(time, true, &block)
   end
 
   # Call the given block after the given interval
@@ -174,3 +202,17 @@ class Timers
     end
   end
 end
+
+#t = Timers.new
+#t.some_method('11:29:15') { puts "#{Time.now}" }
+#puts t.inspect
+#t.wait
+#puts t.inspect
+
+#t = Timers.new
+#t.cron('*/2 * * * *') { puts "#{Time.now}" }
+#puts t.inspect
+#t.wait
+#puts t.inspect
+#t.wait
+#t.wait

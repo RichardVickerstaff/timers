@@ -198,4 +198,8 @@ describe Timers do
       expect(timer.inspect).to match(/\A#<Timers::Timer:[\da-f]+ fires in [-\.\de]+ seconds, recurs every #{sprintf("%0.2f", Q)}>\Z/)
     end
   end
+
+  describe 'cron' do
+
+  end
 end
