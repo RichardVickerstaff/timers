@@ -35,6 +35,7 @@ class Timers
     sleep_at = TimeOfDay.parse(time).second_of_day
     time_now = Time.now.to_time_of_day.second_of_day
     interval = sleep_at - time_now
+
     if recurring
       after(interval) { block.call; every(86400, &block) }
     else
