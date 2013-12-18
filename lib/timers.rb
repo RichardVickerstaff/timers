@@ -2,7 +2,6 @@ require 'set'
 require 'forwardable'
 require 'timers/version'
 require 'hitimes'
-require 'tod'
 require 'parse-cron'
 
 # Workaround for thread safety issues in SortedSet initialization
@@ -13,7 +12,6 @@ class Timers
   include Enumerable
   extend  Forwardable
   def_delegators :@timers, :delete, :each, :empty?
-  ONE_DAY_IN_SECONDS = 86400
 
   def initialize
     @timers = SortedSet.new
@@ -28,24 +26,6 @@ class Timers
     cron_parser = CronParser.new(time)
     interval = cron_parser.next - Time.now
     Timer.new(self, interval, true, cron_parser, &block)
-  end
-
-  # Call the given block at a given time in a human readable format
-  def at(time, recurring = false, &block)
-    sleep_at = TimeOfDay.parse(time).second_of_day
-    time_now = Time.now.to_time_of_day.second_of_day
-    interval = sleep_at - time_now
-
-    if recurring
-      after(interval) { block.call; every(ONE_DAY_IN_SECONDS, &block) }
-    else
-      after(interval, &block)
-    end
-  end
-
-  # Call the given block at the same time every day in a human readable format
-  def recurring_at(time, &block)
-    at(time, true, &block)
   end
 
   # Call the given block after the given interval
